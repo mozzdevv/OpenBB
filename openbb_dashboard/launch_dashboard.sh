@@ -7,8 +7,7 @@ PROJECT_ROOT="$(dirname "$DIR")"
 echo "🚀 Starting OpenBB Local Dashboard..."
 
 # Activate virtual environment
-# The env is outside the OpenBB repo in the parent playground folder
-source "$DIR/../../openbb_env/bin/activate"
+source "$PROJECT_ROOT/openbb_env/bin/activate"
 
 # Start the dashboard backend in the background
 # We use & to run it in background

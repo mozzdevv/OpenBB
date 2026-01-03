@@ -47,29 +47,32 @@ async def get_market_overview():
 @app.get("/api/equity/price/{symbol}")
 async def get_equity_price(symbol: str, timeframe: str = "1y"):
     try:
-        # Map timeframe to OpenBB params if needed
         res = obb.equity.price.historical(symbol, provider="yfinance")
         df = res.to_dataframe()
         if df.empty:
             raise HTTPException(status_code=404, detail="Symbol not found")
         
-        # Convert index (date) to string for JSON serialization
         df = df.reset_index()
-        df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+        # Ensure date is a string in YYYY-MM-DD format
+        if 'date' in df.columns:
+            df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
         
         return df.to_dict(orient="records")
     except Exception as e:
+        print(f"Error fetching price for {symbol}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/equity/profile/{symbol}")
 async def get_equity_profile(symbol: str):
     try:
         res = obb.equity.profile(symbol, provider="yfinance")
-        # Handle the structure of OpenBB output
+        # OpenBB results are usually wrapped in a 'results' list or similar
         data = res.to_dict()
-        return data
+        if isinstance(data, dict) and 'results' in data:
+            return data['results'][0] if data['results'] else {}
+        return data[0] if isinstance(data, list) and data else data
     except Exception as e:
-        # Fallback if profile fails (some providers don't have it)
+        print(f"Error fetching profile for {symbol}: {e}")
         return {"symbol": symbol, "error": str(e)}
 
 @app.get("/api/news")

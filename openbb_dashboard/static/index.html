@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body class="dark-mode">
     <div class="app-container">
         <!-- Sidebar -->
@@ -50,7 +52,8 @@
             <header class="header">
                 <div class="search-bar">
                     <i data-lucide="search"></i>
-                    <input type="text" id="symbol-search" placeholder="Search symbol (e.g. AAPL, BTC)..." autocomplete="off">
+                    <input type="text" id="symbol-search" placeholder="Search symbol (e.g. AAPL, BTC)..."
+                        autocomplete="off">
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-icon" title="Refresh Data">
@@ -69,7 +72,7 @@
                     <h1>Market Overview</h1>
                     <p class="subtitle">Global market performance at a glance</p>
                 </div>
-                
+
                 <div class="market-grid" id="market-overview-grid">
                     <!-- Cards will be injected here -->
                     <div class="loading-shimmer card" style="height: 120px;"></div>
@@ -90,7 +93,7 @@
                         </div>
                         <div id="main-chart" class="chart-area"></div>
                     </div>
-                    
+
                     <div class="side-panel">
                         <div class="card info-card">
                             <div class="card-header">
@@ -112,9 +115,42 @@
                 </div>
             </section>
 
-            <!-- Other views placeholder -->
+            <!-- Other views -->
             <section id="explorer-view" class="view hidden">
-                <h1>Data Explorer</h1>
+                <div class="view-header">
+                    <h1>Data Explorer</h1>
+                </div>
+            </section>
+
+            <section id="watchlists-view" class="view hidden">
+                <div class="view-header">
+                    <h1>Watchlists</h1>
+                    <p class="subtitle">Coming soon - Local watchlists stored in your browser</p>
+                </div>
+                <div class="card">
+                    <p class="placeholder-text">This feature will allow you to save symbols across sessions.</p>
+                </div>
+            </section>
+
+            <section id="news-view" class="view hidden">
+                <div class="view-header">
+                    <h1>Market News</h1>
+                    <p class="subtitle">Latest financial headlines from around the world</p>
+                </div>
+                <div id="full-news-feed" class="news-grid">
+                    <!-- Global news will be injected here -->
+                </div>
+            </section>
+
+            <section id="settings-view" class="view hidden">
+                <div class="view-header">
+                    <h1>Settings</h1>
+                </div>
+                <div class="card">
+                    <h3>API Configuration</h3>
+                    <p class="subtitle">OpenBB comes pre-configured with open sources. Add your API keys to .env file in
+                        the OpenBB folder for premium data.</p>
+                </div>
             </section>
         </main>
     </div>
@@ -128,4 +164,5 @@
         lucide.createIcons();
     </script>
 </body>
+
 </html>

@@ -29,22 +29,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function switchView(viewName) {
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-        document.getElementById(`${viewName}-view`).classList.remove('hidden');
+        const targetView = document.getElementById(`${viewName}-view`);
+        if (targetView) {
+            targetView.classList.remove('hidden');
+        } else {
+            console.warn(`View ${viewName} not implemented yet`);
+        }
 
         navItems.forEach(i => i.classList.remove('active'));
-        document.querySelector(`.nav-item[data-view="${viewName}"]`).classList.add('active');
+        const activeNav = document.querySelector(`.nav-item[data-view="${viewName}"]`);
+        if (activeNav) activeNav.classList.add('active');
 
         state.view = viewName;
+
+        // Perform view-specific actions
+        if (viewName === 'news') {
+            fetchNews();
+        } else if (viewName === 'explorer') {
+            renderExplorer();
+        }
     }
+
+    function renderExplorer() {
+        const explorerView = document.getElementById('explorer-view');
+        explorerView.innerHTML = `
+            <div class="view-header">
+                <h1>Data Explorer</h1>
+                <p class="subtitle">Quick access to popular tickers</p>
+            </div>
+            <div class="explorer-grid">
+                <div class="explorer-category card">
+                    <h3>Tech Giants</h3>
+                    <div class="tag-list">
+                        <span class="tag" onclick="quickSearch('AAPL')">AAPL</span>
+                        <span class="tag" onclick="quickSearch('MSFT')">MSFT</span>
+                        <span class="tag" onclick="quickSearch('GOOGL')">GOOGL</span>
+                        <span class="tag" onclick="quickSearch('AMZN')">AMZN</span>
+                        <span class="tag" onclick="quickSearch('META')">META</span>
+                        <span class="tag" onclick="quickSearch('TSLA')">TSLA</span>
+                        <span class="tag" onclick="quickSearch('NVDA')">NVDA</span>
+                    </div>
+                </div>
+                <div class="explorer-category card">
+                    <h3>Crypto</h3>
+                    <div class="tag-list">
+                        <span class="tag" onclick="quickSearch('BTC-USD')">BTC</span>
+                        <span class="tag" onclick="quickSearch('ETH-USD')">ETH</span>
+                        <span class="tag" onclick="quickSearch('SOL-USD')">SOL</span>
+                        <span class="tag" onclick="quickSearch('DOGE-USD')">DOGE</span>
+                    </div>
+                </div>
+                <div class="explorer-category card">
+                    <h3>ETFs</h3>
+                    <div class="tag-list">
+                        <span class="tag" onclick="quickSearch('SPY')">SPY</span>
+                        <span class="tag" onclick="quickSearch('QQQ')">QQQ</span>
+                        <span class="tag" onclick="quickSearch('VTI')">VTI</span>
+                        <span class="tag" onclick="quickSearch('VOO')">VOO</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    window.quickSearch = (symbol) => {
+        state.currentSymbol = symbol;
+        switchView('dashboard');
+        fetchSymbolData(symbol);
+    };
 
     // API Calls
     async function fetchMarketOverview() {
         try {
             const response = await fetch('/api/market/overview');
+            if (!response.ok) throw new Error('Market data unavailable');
             const data = await response.json();
             renderMarketOverview(data);
         } catch (err) {
             console.error('Failed to fetch market overview:', err);
+            marketGrid.innerHTML = `<div class="error-msg">Failed to load market overview. Check server connection.</div>`;
         }
     }
 
@@ -52,24 +115,29 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Show loading state
             chartTitle.textContent = `Loading ${symbol}...`;
+            assetDetails.innerHTML = `<div class="loading-shimmer" style="height: 200px"></div>`;
+            newsFeed.innerHTML = `<div class="loading-shimmer" style="height: 100px"></div>`;
 
             // Fetch price data
             const priceResponse = await fetch(`/api/equity/price/${symbol}`);
             const priceData = await priceResponse.json();
 
-            if (priceData.detail) throw new Error(priceData.detail);
+            if (!priceResponse.ok || priceData.detail) {
+                throw new Error(priceData.detail || 'Symbol data not found');
+            }
 
             renderChart(symbol, priceData);
             chartTitle.textContent = `${symbol} Performance`;
 
-            // Fetch profile
+            // Fetch profile and news in parallel
             fetchProfile(symbol);
-            // Fetch news
             fetchNews(symbol);
 
         } catch (err) {
             console.error('Error fetching symbol data:', err);
             chartTitle.textContent = `Error loading ${symbol}`;
+            assetDetails.innerHTML = `<p class="error-text">Failed to load ${symbol}. Please check the ticker symbol and try again.</p>`;
+            newsFeed.innerHTML = '';
         }
     }
 
@@ -196,26 +264,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderNews(data) {
-        newsFeed.innerHTML = '';
         const news = Array.isArray(data) ? data : (data.results || []);
 
+        // Render for sidebar (Dashboard)
+        newsFeed.innerHTML = '';
         if (news.length === 0) {
             newsFeed.innerHTML = '<p class="placeholder-text">No recent news found.</p>';
-            return;
+        } else {
+            news.slice(0, 5).forEach(item => {
+                const article = createNewsItem(item);
+                newsFeed.appendChild(article);
+            });
         }
 
-        news.slice(0, 5).forEach(item => {
-            const article = document.createElement('a');
-            article.className = 'news-item';
-            article.href = item.url || '#';
-            article.target = '_blank';
+        // Render for Full News View
+        const fullNewsFeed = document.getElementById('full-news-feed');
+        if (fullNewsFeed) {
+            fullNewsFeed.innerHTML = '';
+            if (news.length === 0) {
+                fullNewsFeed.innerHTML = '<p class="placeholder-text">No news available.</p>';
+            } else {
+                news.forEach(item => {
+                    const article = createNewsItem(item, true);
+                    fullNewsFeed.appendChild(article);
+                });
+            }
+        }
+    }
 
-            article.innerHTML = `
-                <h3>${item.title}</h3>
-                <div class="meta">${item.publisher || item.source || 'News'} • ${formatDate(item.date)}</div>
-            `;
-            newsFeed.appendChild(article);
-        });
+    function createNewsItem(item, isGrid = false) {
+        const article = document.createElement('a');
+        article.className = isGrid ? 'news-item card' : 'news-item';
+        article.href = item.url || '#';
+        article.target = '_blank';
+
+        article.innerHTML = `
+            <h3>${item.title}</h3>
+            <div class="meta">${item.publisher || item.source || 'News'} • ${formatDate(item.date)}</div>
+        `;
+        return article;
     }
 
     // Event Handlers
