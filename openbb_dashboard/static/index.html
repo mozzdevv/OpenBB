@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenBB Local | Terminal-Free Finance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-mode">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">OBB</div>
+                <span class="logo-text">OpenBB<span>Local</span></span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="explorer">
+                    <i data-lucide="search"></i>
+                    <span>Explorer</span>
+                </a>
+                <a href="#" class="nav-item" data-view="watchlists">
+                    <i data-lucide="list"></i>
+                    <span>Watchlists</span>
+                </a>
+                <a href="#" class="nav-item" data-view="news">
+                    <i data-lucide="newspaper"></i>
+                    <span>News</span>
+                </a>
+                <div class="nav-spacer"></div>
+                <a href="#" class="nav-item" data-view="settings">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="search-bar">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="symbol-search" placeholder="Search symbol (e.g. AAPL, BTC)..." autocomplete="off">
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-icon" title="Refresh Data">
+                        <i data-lucide="refresh-cw"></i>
+                    </button>
+                    <div class="user-status">
+                        <div class="status-indicator online"></div>
+                        <span>API Connected</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <section id="dashboard-view" class="view">
+                <div class="view-header">
+                    <h1>Market Overview</h1>
+                    <p class="subtitle">Global market performance at a glance</p>
+                </div>
+                
+                <div class="market-grid" id="market-overview-grid">
+                    <!-- Cards will be injected here -->
+                    <div class="loading-shimmer card" style="height: 120px;"></div>
+                    <div class="loading-shimmer card" style="height: 120px;"></div>
+                    <div class="loading-shimmer card" style="height: 120px;"></div>
+                    <div class="loading-shimmer card" style="height: 120px;"></div>
+                </div>
+
+                <div class="dashboard-layout">
+                    <div class="chart-container card">
+                        <div class="card-header">
+                            <h2 id="chart-title">Symbol Performance</h2>
+                            <div class="chart-controls">
+                                <button class="btn btn-sm" data-range="1m">1M</button>
+                                <button class="btn btn-sm active" data-range="6m">6M</button>
+                                <button class="btn btn-sm" data-range="1y">1Y</button>
+                            </div>
+                        </div>
+                        <div id="main-chart" class="chart-area"></div>
+                    </div>
+                    
+                    <div class="side-panel">
+                        <div class="card info-card">
+                            <div class="card-header">
+                                <h2>Asset Details</h2>
+                            </div>
+                            <div id="asset-details" class="card-body">
+                                <p class="placeholder-text">Search for a symbol to see details</p>
+                            </div>
+                        </div>
+                        <div class="card news-card">
+                            <div class="card-header">
+                                <h2>Latest News</h2>
+                            </div>
+                            <div id="news-feed" class="card-body">
+                                <!-- News items will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Other views placeholder -->
+            <section id="explorer-view" class="view hidden">
+                <h1>Data Explorer</h1>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification system -->
+    <div id="notifications"></div>
+
+    <script src="/static/script.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

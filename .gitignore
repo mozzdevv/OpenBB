@@ -61,3 +61,7 @@ obb/*
 *.pkg
 *.exe
 build/conda/tmp
+
+# Custom Dashboard
+!openbb_dashboard/
+!Launch_OpenBB_Dashboard.command
