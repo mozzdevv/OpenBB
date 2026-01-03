@@ -17,13 +17,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const newsFeed = document.getElementById('news-feed');
     const assetDetails = document.getElementById('asset-details');
 
-    // Navigation
+    // Navigation & Range Controls
     const navItems = document.querySelectorAll('.nav-item');
+    const rangeButtons = document.querySelectorAll('.chart-controls .btn');
+
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             const view = item.getAttribute('data-view');
             switchView(view);
+        });
+    });
+
+    rangeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const range = btn.getAttribute('data-range');
+            state.currentRange = range;
+
+            // Update UI
+            rangeButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Refetch data
+            fetchSymbolData(state.currentSymbol, range);
         });
     });
 
@@ -111,15 +127,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function fetchSymbolData(symbol) {
+    async function fetchSymbolData(symbol, range = state.currentRange) {
         try {
-            // Show loading state
-            chartTitle.textContent = `Loading ${symbol}...`;
-            assetDetails.innerHTML = `<div class="loading-shimmer" style="height: 200px"></div>`;
-            newsFeed.innerHTML = `<div class="loading-shimmer" style="height: 100px"></div>`;
+            state.currentSymbol = symbol;
+            state.currentRange = range;
 
-            // Fetch price data
-            const priceResponse = await fetch(`/api/equity/price/${symbol}`);
+            // Show loading state
+            chartTitle.textContent = `Loading ${symbol} (${range.toUpperCase()})...`;
+            assetDetails.innerHTML = `<div class="loading-shimmer" style="height: 200px"></div>`;
+
+            // Fetch price data with range
+            const priceResponse = await fetch(`/api/equity/price/${symbol}?timeframe=${range}`);
             const priceData = await priceResponse.json();
 
             if (!priceResponse.ok || priceData.detail) {
@@ -127,9 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             renderChart(symbol, priceData);
-            chartTitle.textContent = `${symbol} Performance`;
+            chartTitle.textContent = `${symbol} Performance (${range.toUpperCase()})`;
 
-            // Fetch profile and news in parallel
+            // Fetch profile and news in parallel (static info, no need for range)
             fetchProfile(symbol);
             fetchNews(symbol);
 
@@ -137,7 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching symbol data:', err);
             chartTitle.textContent = `Error loading ${symbol}`;
             assetDetails.innerHTML = `<p class="error-text">Failed to load ${symbol}. Please check the ticker symbol and try again.</p>`;
-            newsFeed.innerHTML = '';
         }
     }
 

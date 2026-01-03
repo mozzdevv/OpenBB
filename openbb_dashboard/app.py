@@ -6,6 +6,8 @@ from openbb import obb
 import pandas as pd
 from typing import Optional, List
 import json
+import feedparser
+from datetime import datetime
 
 app = FastAPI(title="OpenBB Local Dashboard")
 
@@ -47,13 +49,31 @@ async def get_market_overview():
 @app.get("/api/equity/price/{symbol}")
 async def get_equity_price(symbol: str, timeframe: str = "1y"):
     try:
-        res = obb.equity.price.historical(symbol, provider="yfinance")
+        from datetime import datetime, timedelta
+        end_date = datetime.now()
+        
+        if timeframe == "1m":
+            start_date = end_date - timedelta(days=32)
+        elif timeframe == "6m":
+            start_date = end_date - timedelta(days=183)
+        else: # 1y
+            start_date = end_date - timedelta(days=366)
+            
+        start_date_str = start_date.strftime("%Y-%m-%d")
+        
+        # Use OpenBB with explicit dates
+        res = obb.equity.price.historical(
+            symbol, 
+            provider="yfinance", 
+            start_date=start_date_str,
+            interval="1d"
+        )
+        
         df = res.to_dataframe()
         if df.empty:
             raise HTTPException(status_code=404, detail="Symbol not found")
         
         df = df.reset_index()
-        # Ensure date is a string in YYYY-MM-DD format
         if 'date' in df.columns:
             df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
         
@@ -78,12 +98,57 @@ async def get_equity_profile(symbol: str):
 @app.get("/api/news")
 async def get_market_news(symbol: Optional[str] = None):
     try:
-        if symbol:
-            res = obb.news.company(symbol=symbol, provider="yfinance")
-        else:
-            res = obb.news.world(provider="yfinance")
-        return res.to_dict()
+        formatted_news = []
+        
+        # 1. Try OpenBB (yfinance)
+        try:
+            if symbol:
+                res = obb.news.company(symbol=symbol, provider="yfinance")
+            else:
+                res = obb.news.world(provider="yfinance")
+            
+            data = res.to_dict()
+            results = data.get('results', []) if isinstance(data, dict) else data
+            
+            for item in (results or []):
+                if isinstance(item, dict):
+                    formatted_news.append({
+                        "title": item.get("title", "No Title"),
+                        "url": item.get("url", "#"),
+                        "publisher": item.get("publisher") or item.get("source") or "OpenBB News",
+                        "date": str(item.get("date", ""))
+                    })
+        except Exception as e:
+            print(f"OpenBB news fetch failed: {e}")
+
+        # 2. Add RSS News as additional source (Free & Reliable)
+        try:
+            rss_url = "https://finance.yahoo.com/news/rssindex"
+            if symbol:
+                rss_url = f"https://finance.yahoo.com/rss/headline?s={symbol}"
+            
+            feed = feedparser.parse(rss_url)
+            for entry in feed.entries[:10]:
+                formatted_news.append({
+                    "title": entry.title,
+                    "url": entry.link,
+                    "publisher": "Yahoo Finance (RSS)",
+                    "date": entry.get("published", "")
+                })
+        except Exception as e:
+            print(f"RSS news fetch failed: {e}")
+
+        # Remove duplicates based on title and sort by date if possible
+        seen_titles = set()
+        unique_news = []
+        for n in formatted_news:
+            if n['title'].lower() not in seen_titles:
+                unique_news.append(n)
+                seen_titles.add(n['title'].lower())
+        
+        return unique_news[:15] # Top 15 results
     except Exception as e:
+        print(f"Global news error: {e}")
         return []
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
